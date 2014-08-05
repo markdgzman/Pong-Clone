@@ -3,13 +3,44 @@
 #include <iostream>
 #include <random>
 #include "Ball.cpp"
-
-const int screenWidth = 900, screenHeight = 600;
-const float ballSize = 8.f;
+#include <stdio.h>
+#include <conio.h>
 
 using namespace sf;
 using namespace std;
 
+const int screenWidth = 900, screenHeight = 600;
+const float ballSize = 8.f;
+Font font;
+Text text;
+Text p2Score;
+Text retryText;
+
+int direction = 0;
+float angle = 0;
+double paddleSpeed = 0;
+bool winCondition = false , loseCondition = false, gameStart = false;
+bool menuScreen = false, ballServe = false;
+bool instructions = true;
+int computerPaddleSpeed = 15;
+
+int playerScore = 0, computerScore = 0;
+
+//Paddle Left
+Paddle p1(Paddle(Vector2f(10, screenHeight / 2 - 50), Vector2f(10, 100), Color::Red));
+Ball b(Ball(Vector2f(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize), ballSize, Color::Green));
+
+//Paddle Right
+Paddle p2(Paddle(Vector2f(screenWidth - 20, screenHeight / 2 - 50), Vector2f(10, 100), Color::Blue));
+
+//Sound
+SoundBuffer buffer;
+SoundBuffer scoreBuffer;
+Sound scoreSound;
+Sound sound;
+
+void playerBallCollision();
+void computerBallCollision();
 
 int main()
 {
@@ -18,23 +49,46 @@ int main()
 	CircleShape shape(ballSize);
 	shape.setFillColor(Color::Green);
 	shape.setPosition(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize);
-	int direction = -20;
-	float angle = 0;
-
-	//Sound
-	SoundBuffer buffer;
 
 
+	//Load Sound
 	if (!buffer.loadFromFile("Audio/paddlehit.wav"))
 		return -1;
+	if (!scoreBuffer.loadFromFile("Audio/scoreUpdate.wav"))
+		return -1;
 
-	Sound sound;
+	scoreSound.setBuffer(scoreBuffer);
+	scoreSound.setVolume(35);
 	sound.setBuffer(buffer);
 	sound.setVolume(25);
 
-	//Paddle Left
-	Paddle p1(Paddle(Vector2f(10, screenHeight / 2 - 50), Vector2f(10, 100), Color::Red));
-	Ball b(Ball(Vector2f(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize), ballSize, Color::Green));
+	//Load Image
+	Texture texture;
+	if (!texture.loadFromFile("Images/Back.png"));
+
+
+	//Load Font
+	if (!font.loadFromFile("Fonts/arial.ttf"))
+		return -1;
+
+	text.setFont(font);
+	text.setString("0");
+
+	p2Score.setFont(font);
+	p2Score.setString("0");
+
+	// set the character size
+	text.setCharacterSize(44); // in pixels, not points!
+	p2Score.setCharacterSize(44);
+
+	//Set text position
+	text.setPosition(screenWidth / 2 - 65, 10);
+	p2Score.setPosition(screenWidth / 2 + 50, 10);
+
+	//gameStart = true;
+	//winCondition = true;
+	//loseCondition = true;
+	menuScreen = true;
 
 	while (window.isOpen())
 	{
@@ -44,124 +98,467 @@ int main()
 			if (event.type == Event::Closed)
 				window.close();
 
+			if (Event::MouseMoved)
+			{
+				if (event.mouseMove.x < 200 && event.mouseMove.x > 12 && event.mouseMove.y < 286 && event.mouseMove.y > 255)
+				{
+					cout << "INSIDE" << endl;
+				}
+
+				if (Mouse::getPosition(window).x > 12)
+				{
+					cout << "YO" << endl;
+				}
+			}
+			
 			if (Keyboard::isKeyPressed(Keyboard::Space))
 			{
-				b.ball.setPosition(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize);
-				direction = -20;
-				angle = 0;
+				if (gameStart)
+				{
+
+					if (direction == 0)
+					{
+						b.ball.setPosition(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize);
+						direction = 0;
+						angle = 0;
+						ballServe = true;
+					}
+					if (ballServe)
+					{
+						int randDirection = rand() % (10) + 1;
+						switch (randDirection)
+						{
+						case 1:
+							direction = -20;
+							break;
+						case 2:
+							direction = 20;
+							break;
+						case 3:
+							direction = -20;
+							angle = 3;
+							break;
+						case 4:
+							direction = -20;
+							angle = -3;
+							break;
+						case 5:
+							direction = 20;
+							angle = 3;
+							break;
+						case 6:
+							direction = 20;
+							angle = -3;
+							break;
+						case 7:
+							direction = -20;
+							angle = 6;
+							break;
+						case 8:
+							direction = -20;
+							angle = -6;
+							break;
+						case 9:
+							direction = 20;
+							angle = 6;
+							break;
+						case 10:
+							direction = 20;
+							angle = -6;
+							break;
+						}
+
+						ballServe = false;
+					}
+					
+				}
+				else if (winCondition || loseCondition && !gameStart)
+				{
+					playerScore = 0;
+					computerScore = 0;
+					text.setString(to_string(playerScore));
+					p2Score.setString(to_string(computerScore));
+					winCondition = false;
+					loseCondition = false;
+					//direction = 0;
+					//angle = 0;
+					gameStart = true;	
+				}
 			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Down) == false || Keyboard::isKeyPressed(Keyboard::Up) == false)
+			{
+				paddleSpeed = 0;
+			}
+
 			if (Keyboard::isKeyPressed(Keyboard::Down))
 			{
-				p1.paddle.move(0, 10);
+				paddleSpeed = 10;
+				//p1.paddle.move(0, 10);
 			}
-			else if (Keyboard::isKeyPressed(Keyboard::Up))
+			if (Keyboard::isKeyPressed(Keyboard::Up))
 			{
-				p1.paddle.move(0, -10);
+				paddleSpeed = -10;
+				//p1.paddle.move(0, -10);
 			}
 		}
 
-		p1.Update();
-		b.Update();
+		if (menuScreen)
+		{
+				Sprite sprite;
+				sprite.setTexture(texture);
+				
+				/*	//Load Image
+				Texture texture;
+				if (!texture.loadFromFile("Images/Back.png"));
+				*/
 
-		//Paddle Wall Collision
-		if (p1.collisionTop(0))
-		{
-			p1.paddle.setPosition(10, 1);
-		}
-		else if (p1.collisionBottom(screenHeight))
-		{
-			p1.paddle.setPosition(10, screenHeight - 101);
-		}
+				Texture play;
+				if (!play.loadFromFile("Images/menuTexture.png", IntRect(5, 64, 105, 40)))
+				{
+					return -1;
+				}
 
-		//Ball Collision
-		if (b.collisionTop(p1))
-		{
-			direction = -direction;
-			angle -= 5;
-			sound.play();
-			//angle -= 15;
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionTopCorner(p1))
-		{
-			direction = -direction;
-			angle -= 8;
-			sound.play();
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionMidTop(p1))
-		{
-			direction = -direction;
-			angle -= 3;
-			sound.play();
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionMiddle(p1))
-		{
-			direction = -direction;
-			sound.play();
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionMidBottom(p1))
-		{
-			direction = -direction;
-			angle += 3;
-			sound.play();
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionBottomCorner(p1))
-		{
-			direction = -direction;
-			angle += 8;
-			sound.play();
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionBottom(p1))
-		{
-			direction = -direction;
-			angle += 5;
-			//angle -= 15;
-			sound.play();
-			std::cout << "Speed: " << direction << std::endl;
-			std::cout << "Angle: " << angle << std::endl;
-		}
-		else if (b.collisionLast(p1))
-		{
-			direction = -direction;
-			sound.play();
-			std::cout << "Last Collision" << endl;
+				Texture quit;
+				if (!quit.loadFromFile("Images/menuTexture.png", IntRect(4,153,95,46)))
+				{
+					return -1;
+				}
+
+				Sprite playSprite;
+
+				playSprite.setTexture(play);
+				playSprite.setPosition(10, 250);
+
+				Sprite quitSprite;
+				quitSprite.setTexture(quit);
+				quitSprite.setPosition(10, 350);
+				
+				//cout << quitSprite.getGlobalBounds().width << endl;
+				//cout << quitSprite.getPosition().x << endl;
+
+				cout << "X: " << Mouse::getPosition(window).x << endl;
+				cout << "Y: " << Mouse::getPosition(window).y << endl;
+
+				window.clear(Color::Black);
+				window.draw(sprite);
+				window.draw(playSprite);
+				window.draw(quitSprite);
+				window.display();
 		}
 
-		//Edge Collisions
-		if (b.right >= screenWidth)
+		//Start Game
+		if (gameStart)
 		{
-			direction = -direction;
-		}
-		else if (b.bottom > screenHeight)
-		{
-			angle = -angle;
-		}
-		else if (b.top < 0)
-		{
-			angle = -angle;
+			//Computer AI
+			if (direction == 0)
+			{
+
+			}
+			else if (p2.bottom > screenHeight - 10)
+			{
+				p2.paddle.setPosition(Vector2f(screenWidth - 10, screenHeight - 111));
+			}
+			else if (p2.top < 10)
+			{
+				p2.paddle.setPosition(Vector2f(screenWidth - 10, 11));
+			}
+			else if (direction < 0)
+			{
+				if (p2.paddle.getPosition().y + 25 == screenHeight / 2)
+				{
+					p2.paddle.move(0, 0);
+				}
+				else if (p2.paddle.getPosition().y + 25 < screenHeight / 2)
+				{
+					p2.paddle.move(0, 5);
+				}
+				else if (p2.paddle.getPosition().y + 25 > screenHeight / 2)
+				{
+					p2.paddle.move(0, -5);
+				}
+			}
+			else if (p2.paddle.getPosition().y - 50 != b.ball.getPosition().y + 4 &&
+				p2.bottom < screenHeight-10 &&
+				p2.top > 10)
+			{
+				if (b.ball.getPosition().y + 4 > p2.paddle.getPosition().y + 25)
+				{
+					p2.paddle.move(0, computerPaddleSpeed);
+				}
+				else if (b.ball.getPosition().y + 4 < p2.paddle.getPosition().y + 25)
+				{
+					p2.paddle.move(0, -computerPaddleSpeed);
+				}
+			}
+
+			p1.paddle.move(0, paddleSpeed);
+
+			p1.Update();
+			p2.Update();
+			b.Update();
+
+			//Paddle Wall Collision
+			if (p1.collisionTop(0))
+			{
+				p1.paddle.setPosition(10, 1);
+			}
+			else if (p1.collisionBottom(screenHeight))
+			{
+				p1.paddle.setPosition(10, screenHeight - 101);
+			}
+
+			//Edge Collisions
+			//Right Edge Collision
+			if (b.right >= screenWidth)
+			{
+				playerScore++;
+				text.setString(to_string(playerScore));
+				b.ball.setPosition(screenWidth / 2 - ballSize / 2, screenHeight / 2);
+				direction = 0;
+				angle = 0;
+				scoreSound.play();
+			}
+			else if (b.left <= 0)
+			{
+				computerScore++;
+				p2Score.setString(to_string(computerScore));
+				b.ball.setPosition(screenWidth / 2 - ballSize / 2, screenHeight / 2);
+				direction = 0;
+				angle = 0;
+				scoreSound.play();
+			}
+
+			//Ball Collision Method
+			playerBallCollision();
+			computerBallCollision();
+
+			//Move ball
+			b.ball.move(direction, angle);
+
+			//Create Arena Objects
+			//Top Line
+			RectangleShape topLine(Vector2f(screenWidth, 10));
+			topLine.setFillColor(Color::White);
+			//Bottom Line
+			RectangleShape bottomLine(Vector2f(screenWidth, 10));
+			bottomLine.setPosition(0, screenHeight - 10);
+			bottomLine.setFillColor(Color::White);
+			//Middle Line
+			RectangleShape middleLine(Vector2f(10, screenHeight));
+			middleLine.setPosition(screenWidth / 2, 0);
+			middleLine.setFillColor(Color::White);
+
+
+			//Clear Screen and Draw objects
+			window.clear();
+
+			//Draw Arena
+			window.draw(bottomLine);
+			window.draw(topLine);
+			window.draw(middleLine);
+
+			window.draw(b.ball);
+			window.draw(p1.paddle);
+			window.draw(p2.paddle);
+			window.draw(text);
+			window.draw(p2Score);
+
+
+
+			//Display
+			window.display();
+
+
+			//Win Condition
+			if (playerScore >= 6)
+			{
+				gameStart = false;
+				winCondition = true;
+			}
+			else if (computerScore >= 6)
+			{
+				gameStart = false;
+				loseCondition = true;
+			}
 		}
 
-		b.ball.move(direction, angle);
+		//Win or Lose Screen
+		if (winCondition || loseCondition)
+		{
+			gameStart = false;
+			Text endGame;
+			endGame.setFont(font);
+			retryText.setFont(font);
 
-		window.clear();
-		window.draw(b.ball);
-		window.draw(p1.paddle);
-		//window.draw(shape);
-		window.display();
+			if (winCondition)
+			{
+				endGame.setString("You Win!");
+				endGame.setPosition(screenWidth / 2 - 210, screenHeight / 2 - 150);
+			}
+			else
+			{
+				endGame.setString("You Lose!");
+				//Set endGame position
+				endGame.setPosition(screenWidth / 2 - 350, screenHeight / 2 - 150);
+			}
+			// set the character size
+			endGame.setCharacterSize(100); // in pixels, not points!
+
+			retryText.setString("Press Space to try again");
+			retryText.setCharacterSize(50);
+			if (winCondition)
+				retryText.setPosition(screenWidth / 2 - 290, screenHeight / 2 - 10); 
+			else
+				retryText.setPosition(screenWidth / 2 - 290, screenHeight / 2 + 100);
+
+			
+			p1.paddle.move(0, paddleSpeed);
+
+			p1.Update();
+			p2.Update();
+			b.Update();
+
+			//Paddle Wall Collision
+			if (p1.collisionTop(0))
+			{
+				p1.paddle.setPosition(10, 1);
+			}
+			else if (p1.collisionBottom(screenHeight))
+			{
+				p1.paddle.setPosition(10, screenHeight - 101);
+			}
+
+
+			window.clear(Color::Black);
+
+			window.draw(b.ball);
+			window.draw(p1.paddle);
+			window.draw(p2.paddle);
+			window.draw(text);
+			window.draw(p2Score);
+
+			window.draw(retryText);
+			window.draw(endGame);
+			window.display();
+		}
 	}
 
 	return 0;
+}
+
+
+
+void playerBallCollision()
+{
+	if (b.collisionTop(p1))
+	{
+		direction = -direction;
+		angle -= 5;
+		sound.play();
+	}
+	else if (b.collisionTopCorner(p1))
+	{
+		direction = -direction;
+		angle -= 8;
+		sound.play();
+	}
+	else if (b.collisionMidTop(p1))
+	{
+		direction = -direction;
+		angle -= 3;
+		sound.play();
+	}
+	else if (b.collisionMiddle(p1))
+	{
+		direction = -direction;
+		sound.play();
+	}
+	else if (b.collisionMidBottom(p1))
+	{
+		direction = -direction;
+		angle += 3;
+		sound.play();
+	}
+	else if (b.collisionBottomCorner(p1))
+	{
+		direction = -direction;
+		angle += 8;
+		sound.play();
+	}
+	else if (b.collisionBottom(p1))
+	{
+		direction = -direction;
+		angle += 5;
+		//angle -= 15;
+		sound.play();
+	}
+	else if (b.collisionLast(p1))
+	{
+		direction = -direction;
+		sound.play();
+	}
+
+	if (b.bottom > screenHeight-10)
+	{
+		angle = -angle;
+	}
+	else if (b.top < 10)
+	{
+		angle = -angle;
+	}
+}
+
+
+void computerBallCollision()
+{
+	if (b.collisionTop(p2))
+	{
+		direction = -direction;
+		angle -= 5;
+		sound.play();
+	}
+	else if (b.collisionTopCorner(p2))
+	{
+		direction = -direction;
+		angle -= 8;
+		sound.play();
+	}
+	else if (b.collisionMidTop(p2))
+	{
+		direction = -direction;
+		angle -= 3;
+		sound.play();
+	}
+	else if (b.collisionMiddle(p2))
+	{
+		direction = -direction;
+		sound.play();
+	}
+	else if (b.collisionMidBottom(p2))
+	{
+		direction = -direction;
+		angle += 3;
+		sound.play();
+	}
+	else if (b.collisionBottomCorner(p2))
+	{
+		direction = -direction;
+		angle += 8;
+		sound.play();
+	}
+	else if (b.collisionBottom(p2))
+	{
+		direction = -direction;
+		angle += 5;
+		//angle -= 15;
+		sound.play();
+	}
+	else if (b.collisionLast(p2))
+	{
+		direction = -direction;
+		sound.play();
+	}
 }
 
 /*
