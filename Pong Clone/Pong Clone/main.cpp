@@ -106,6 +106,8 @@ int main()
 	Text playMenu;
 	Text quitMenu;
 
+	bool focus = true;
+
 	while (window.isOpen())
 	{
 		Event event;
@@ -114,142 +116,154 @@ int main()
 			if (event.type == Event::Closed)
 				window.close();
 
-			
-			if (Mouse::getPosition(window).x > 13 && Mouse::getPosition(window).x <112
-				&& Mouse::getPosition(window).y > 313 && Mouse::getPosition(window).y < 354)
+			if (event.type == Event::GainedFocus)
 			{
-				playMenu.setColor(Color::Red);
-				if (Mouse::isButtonPressed(Mouse::Left))
-				{
-					gameStart = true;
-					menuScreen = false;
-					winCondition = false;
-					loseCondition = false;
-					menuSelect.play();
-				}
+				focus = true;
 			}
-			else if (Mouse::getPosition(window).x > 13 && Mouse::getPosition(window).x < 112
-				&& Mouse::getPosition(window).y > 413 && Mouse::getPosition(window).y < 454)
+			if (event.type == Event::LostFocus)
 			{
-				quitMenu.setColor(Color::Red);
-
-				if (Mouse::isButtonPressed(Mouse::Left))
-				{
-					window.close();
-				}
-			}
-			else
-			{
-				//cout << "X: " << Mouse::getPosition(window).x << "  Y: " << Mouse::getPosition(window).y << endl;
-				playMenu.setColor(Color::White);
-				quitMenu.setColor(Color::White);
-			}
-
-			if (Keyboard::isKeyPressed(Keyboard::Escape))
-			{
-				if (winCondition || loseCondition)
-				{
-					gameStart = false;
-					winCondition = false;
-					loseCondition = false;
-					menuScreen = true;
-					playerScore = 0;
-					computerScore = 0;
-					text.setString("0");
-					p2Score.setString("0");
-					
-				}
+				focus = false;
 			}
 			
-			if (Keyboard::isKeyPressed(Keyboard::Space))
+			if (focus)
 			{
-				if (gameStart)
+				if (Mouse::getPosition(window).x > 13 && Mouse::getPosition(window).x < 112
+					&& Mouse::getPosition(window).y > 313 && Mouse::getPosition(window).y < 354)
 				{
-
-					if (direction == 0)
+					playMenu.setColor(Color::Red);
+					if (Mouse::isButtonPressed(Mouse::Left))
 					{
-						b.ball.setPosition(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize);
-						direction = 0;
-						angle = 0;
-						ballServe = true;
+						gameStart = true;
+						menuScreen = false;
+						winCondition = false;
+						loseCondition = false;
+						menuSelect.play();
 					}
-					if (ballServe)
+				}
+				else if (Mouse::getPosition(window).x > 13 && Mouse::getPosition(window).x < 112
+					&& Mouse::getPosition(window).y > 413 && Mouse::getPosition(window).y < 454)
+				{
+					quitMenu.setColor(Color::Red);
+
+					if (Mouse::isButtonPressed(Mouse::Left))
 					{
-						int randDirection = rand() % (10) + 1;
-						switch (randDirection)
+						window.close();
+					}
+				}
+				else
+				{
+					//cout << "X: " << Mouse::getPosition(window).x << "  Y: " << Mouse::getPosition(window).y << endl;
+					playMenu.setColor(Color::White);
+					quitMenu.setColor(Color::White);
+				}
+
+				if (Keyboard::isKeyPressed(Keyboard::Escape))
+				{
+					if (winCondition || loseCondition)
+					{
+						gameStart = false;
+						winCondition = false;
+						loseCondition = false;
+						menuScreen = true;
+						playerScore = 0;
+						computerScore = 0;
+						text.setString("0");
+						p2Score.setString("0");
+
+					}
+				}
+
+				if (Keyboard::isKeyPressed(Keyboard::Space))
+				{
+					if (gameStart)
+					{
+
+						if (direction == 0)
 						{
-						case 1:
-							direction = -20;
-							break;
-						case 2:
-							direction = 20;
-							break;
-						case 3:
-							direction = -20;
-							angle = 3;
-							break;
-						case 4:
-							direction = -20;
-							angle = -3;
-							break;
-						case 5:
-							direction = 20;
-							angle = 3;
-							break;
-						case 6:
-							direction = 20;
-							angle = -3;
-							break;
-						case 7:
-							direction = -20;
-							angle = 6;
-							break;
-						case 8:
-							direction = -20;
-							angle = -6;
-							break;
-						case 9:
-							direction = 20;
-							angle = 6;
-							break;
-						case 10:
-							direction = 20;
-							angle = -6;
-							break;
+							b.ball.setPosition(screenWidth / 2 - ballSize, screenHeight / 2 - ballSize);
+							direction = 0;
+							angle = 0;
+							ballServe = true;
+						}
+						if (ballServe)
+						{
+							int randDirection = rand() % (10) + 1;
+							switch (randDirection)
+							{
+							case 1:
+								direction = -20;
+								break;
+							case 2:
+								direction = 20;
+								break;
+							case 3:
+								direction = -20;
+								angle = 3;
+								break;
+							case 4:
+								direction = -20;
+								angle = -3;
+								break;
+							case 5:
+								direction = 20;
+								angle = 3;
+								break;
+							case 6:
+								direction = 20;
+								angle = -3;
+								break;
+							case 7:
+								direction = -20;
+								angle = 6;
+								break;
+							case 8:
+								direction = -20;
+								angle = -6;
+								break;
+							case 9:
+								direction = 20;
+								angle = 6;
+								break;
+							case 10:
+								direction = 20;
+								angle = -6;
+								break;
+							}
+
+							ballServe = false;
 						}
 
-						ballServe = false;
 					}
-					
+					else if (winCondition || loseCondition && !gameStart)
+					{
+						playerScore = 0;
+						computerScore = 0;
+						text.setString(to_string(playerScore));
+						p2Score.setString(to_string(computerScore));
+						winCondition = false;
+						loseCondition = false;
+						//direction = 0;
+						//angle = 0;
+						gameStart = true;
+					}
 				}
-				else if (winCondition || loseCondition && !gameStart)
+
+				if (Keyboard::isKeyPressed(Keyboard::Down) == false || Keyboard::isKeyPressed(Keyboard::Up) == false)
 				{
-					playerScore = 0;
-					computerScore = 0;
-					text.setString(to_string(playerScore));
-					p2Score.setString(to_string(computerScore));
-					winCondition = false;
-					loseCondition = false;
-					//direction = 0;
-					//angle = 0;
-					gameStart = true;	
+					paddleSpeed = 0;
 				}
-			}
 
-			if (Keyboard::isKeyPressed(Keyboard::Down) == false || Keyboard::isKeyPressed(Keyboard::Up) == false)
-			{
-				paddleSpeed = 0;
-			}
+				if (Keyboard::isKeyPressed(Keyboard::Down))
+				{
+					paddleSpeed = 15;
+					//p1.paddle.move(0, 10);
+				}
+				if (Keyboard::isKeyPressed(Keyboard::Up))
+				{
+					paddleSpeed = -15;
+					//p1.paddle.move(0, -10);
+				}
 
-			if (Keyboard::isKeyPressed(Keyboard::Down))
-			{
-				paddleSpeed = 15;
-				//p1.paddle.move(0, 10);
-			}
-			if (Keyboard::isKeyPressed(Keyboard::Up))
-			{
-				paddleSpeed = -15;
-				//p1.paddle.move(0, -10);
 			}
 		}
 
@@ -433,7 +447,7 @@ int main()
 			}
 			else
 			{
-				endGame.setString("You Lose! \n You suck Mikey!");
+				endGame.setString("You Lose!");
 				//Set endGame position
 				endGame.setPosition(screenWidth / 2 - 350, screenHeight / 2 - 150);
 			}
