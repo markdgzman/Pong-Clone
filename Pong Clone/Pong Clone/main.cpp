@@ -198,35 +198,35 @@ int main()
 								break;
 							case 3:
 								direction = -20;
-								angle = 3;
+								angle = 1;
 								break;
 							case 4:
 								direction = -20;
-								angle = -3;
+								angle = -1;
 								break;
 							case 5:
 								direction = 20;
-								angle = 3;
+								angle = 1;
 								break;
 							case 6:
 								direction = 20;
-								angle = -3;
+								angle = -1;
 								break;
 							case 7:
 								direction = -20;
-								angle = 6;
+								angle = 2;
 								break;
 							case 8:
 								direction = -20;
-								angle = -6;
+								angle = -2;
 								break;
 							case 9:
 								direction = 20;
-								angle = 6;
+								angle = 2;
 								break;
 							case 10:
 								direction = 20;
-								angle = -6;
+								angle = -2;
 								break;
 							}
 
