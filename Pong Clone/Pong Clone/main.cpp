@@ -15,6 +15,7 @@ Font font;
 Text text;
 Text p2Score;
 Text retryText;
+Text quitMenuText;
 
 int direction = 0;
 float angle = 0;
@@ -36,8 +37,10 @@ Paddle p2(Paddle(Vector2f(screenWidth - 20, screenHeight / 2 - 50), Vector2f(10,
 //Sound
 SoundBuffer buffer;
 SoundBuffer scoreBuffer;
+SoundBuffer menuSelectBuffer;
 Sound scoreSound;
 Sound sound;
+Sound menuSelect;
 
 void playerBallCollision();
 void computerBallCollision();
@@ -56,15 +59,25 @@ int main()
 		return -1;
 	if (!scoreBuffer.loadFromFile("Audio/scoreUpdate.wav"))
 		return -1;
+	if (!menuSelectBuffer.loadFromFile("Audio/menuSelect.wav"))
+		return -1;
 
 	scoreSound.setBuffer(scoreBuffer);
 	scoreSound.setVolume(35);
 	sound.setBuffer(buffer);
 	sound.setVolume(25);
+	menuSelect.setBuffer(menuSelectBuffer);
+	menuSelect.setVolume(25);
 
 	//Load Image
 	Texture texture;
-	if (!texture.loadFromFile("Images/Back.png"));
+	if (!texture.loadFromFile("Images/Back.png"))
+		return -1;
+
+	Texture controls;
+	if (!controls.loadFromFile("Images/controls.png"))
+		return -1;
+	
 
 
 	//Load Font
@@ -89,6 +102,9 @@ int main()
 	//winCondition = true;
 	//loseCondition = true;
 	menuScreen = true;
+	
+	Text playMenu;
+	Text quitMenu;
 
 	while (window.isOpen())
 	{
@@ -98,16 +114,50 @@ int main()
 			if (event.type == Event::Closed)
 				window.close();
 
-			if (Event::MouseMoved)
+			
+			if (Mouse::getPosition(window).x > 13 && Mouse::getPosition(window).x <112
+				&& Mouse::getPosition(window).y > 313 && Mouse::getPosition(window).y < 354)
 			{
-				if (event.mouseMove.x < 200 && event.mouseMove.x > 12 && event.mouseMove.y < 286 && event.mouseMove.y > 255)
+				playMenu.setColor(Color::Red);
+				if (Mouse::isButtonPressed(Mouse::Left))
 				{
-					cout << "INSIDE" << endl;
+					gameStart = true;
+					menuScreen = false;
+					winCondition = false;
+					loseCondition = false;
+					menuSelect.play();
 				}
+			}
+			else if (Mouse::getPosition(window).x > 13 && Mouse::getPosition(window).x < 112
+				&& Mouse::getPosition(window).y > 413 && Mouse::getPosition(window).y < 454)
+			{
+				quitMenu.setColor(Color::Red);
 
-				if (Mouse::getPosition(window).x > 12)
+				if (Mouse::isButtonPressed(Mouse::Left))
 				{
-					cout << "YO" << endl;
+					window.close();
+				}
+			}
+			else
+			{
+				//cout << "X: " << Mouse::getPosition(window).x << "  Y: " << Mouse::getPosition(window).y << endl;
+				playMenu.setColor(Color::White);
+				quitMenu.setColor(Color::White);
+			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Escape))
+			{
+				if (winCondition || loseCondition)
+				{
+					gameStart = false;
+					winCondition = false;
+					loseCondition = false;
+					menuScreen = true;
+					playerScore = 0;
+					computerScore = 0;
+					text.setString("0");
+					p2Score.setString("0");
+					
 				}
 			}
 			
@@ -193,12 +243,12 @@ int main()
 
 			if (Keyboard::isKeyPressed(Keyboard::Down))
 			{
-				paddleSpeed = 10;
+				paddleSpeed = 15;
 				//p1.paddle.move(0, 10);
 			}
 			if (Keyboard::isKeyPressed(Keyboard::Up))
 			{
-				paddleSpeed = -10;
+				paddleSpeed = -15;
 				//p1.paddle.move(0, -10);
 			}
 		}
@@ -207,43 +257,26 @@ int main()
 		{
 				Sprite sprite;
 				sprite.setTexture(texture);
+
+				Sprite controlSprite;
+				controlSprite.setTexture(controls);
+				controlSprite.setPosition(300, 300);
 				
-				/*	//Load Image
-				Texture texture;
-				if (!texture.loadFromFile("Images/Back.png"));
-				*/
-
-				Texture play;
-				if (!play.loadFromFile("Images/menuTexture.png", IntRect(5, 64, 105, 40)))
-				{
-					return -1;
-				}
-
-				Texture quit;
-				if (!quit.loadFromFile("Images/menuTexture.png", IntRect(4,153,95,46)))
-				{
-					return -1;
-				}
-
-				Sprite playSprite;
-
-				playSprite.setTexture(play);
-				playSprite.setPosition(10, 250);
-
-				Sprite quitSprite;
-				quitSprite.setTexture(quit);
-				quitSprite.setPosition(10, 350);
+				playMenu.setFont(font);
+				playMenu.setString("Play");
+				playMenu.setCharacterSize(55);
+				playMenu.setPosition(Vector2f(10, 300));
 				
-				//cout << quitSprite.getGlobalBounds().width << endl;
-				//cout << quitSprite.getPosition().x << endl;
-
-				cout << "X: " << Mouse::getPosition(window).x << endl;
-				cout << "Y: " << Mouse::getPosition(window).y << endl;
+				quitMenu.setFont(font);
+				quitMenu.setString("Quit");
+				quitMenu.setCharacterSize(55);
+				quitMenu.setPosition(Vector2f(10, 400));
 
 				window.clear(Color::Black);
+				window.draw(playMenu);
 				window.draw(sprite);
-				window.draw(playSprite);
-				window.draw(quitSprite);
+				window.draw(controlSprite);
+				window.draw(quitMenu);
 				window.display();
 		}
 
@@ -365,7 +398,6 @@ int main()
 			window.draw(p2Score);
 
 
-
 			//Display
 			window.display();
 
@@ -390,15 +422,18 @@ int main()
 			Text endGame;
 			endGame.setFont(font);
 			retryText.setFont(font);
+			quitMenuText.setFont(font);
+			quitMenuText.setCharacterSize(50);
+			quitMenuText.setString("Press Esc to return to Main Menu");
 
 			if (winCondition)
 			{
 				endGame.setString("You Win!");
-				endGame.setPosition(screenWidth / 2 - 210, screenHeight / 2 - 150);
+				endGame.setPosition(screenWidth / 2 - 350, screenHeight / 2 - 150);
 			}
 			else
 			{
-				endGame.setString("You Lose!");
+				endGame.setString("You Lose! \n You suck Mikey!");
 				//Set endGame position
 				endGame.setPosition(screenWidth / 2 - 350, screenHeight / 2 - 150);
 			}
@@ -408,10 +443,17 @@ int main()
 			retryText.setString("Press Space to try again");
 			retryText.setCharacterSize(50);
 			if (winCondition)
-				retryText.setPosition(screenWidth / 2 - 290, screenHeight / 2 - 10); 
+			{
+				retryText.setPosition(screenWidth / 2 - 340, screenHeight / 2 - 10);
+				quitMenuText.setPosition(screenWidth / 2 - 340, screenHeight / 2 + 70);
+			}
 			else
-				retryText.setPosition(screenWidth / 2 - 290, screenHeight / 2 + 100);
+			{
+				retryText.setPosition(screenWidth / 2 - 340, screenHeight / 2 + 100);
+				quitMenuText.setPosition(screenWidth / 2 - 340, screenHeight / 2 + 170);
+			}
 
+			
 			
 			p1.paddle.move(0, paddleSpeed);
 
@@ -437,7 +479,7 @@ int main()
 			window.draw(p2.paddle);
 			window.draw(text);
 			window.draw(p2Score);
-
+			window.draw(quitMenuText);
 			window.draw(retryText);
 			window.draw(endGame);
 			window.display();

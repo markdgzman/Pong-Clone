@@ -1,2 +1,7 @@
 Space: Serve Ball
 Arrow Keys: Move Paddle
+
+13, 313 top left
+112, 313 top right
+13, 354 bot left
+112, 354
